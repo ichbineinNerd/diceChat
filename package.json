@@ -1,0 +1,12 @@
+{
+  "name": "dicechat",
+  "version": "0.0.0",
+  "dependencies": {
+    "dotenv": "^8.0.0",
+    "escape-html": "^1.0.3",
+    "websocket": "^1.0.29"
+  },
+  "scripts": {
+    "start": "node ./index.js"
+  }
+}
