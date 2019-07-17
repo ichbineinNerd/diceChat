@@ -40,7 +40,7 @@ if (!window.WebSocket) {
                 }
                 const msg = message.data.substring(3 + authorLength);
                 const numbers = msg.split('').map(val => bton(val));
-                document.getElementById('a').innerHTML += '<p><b>' + author + '</b> has rolled ' + numbers.length + 'd' + max + '</p>';
+                document.getElementById('a').innerHTML += '<p><b>' + author + '</b> has rolled ' + numbers.length + 'd' + max + ': ' + numbers.join(' ') + '</p>';
             }
         };
 
