@@ -5,10 +5,11 @@
     "dotenv": "^8.0.0",
     "escape-html": "^1.0.3",
     "number-to-base64": "^1.0.5",
+    "parcel-bundler": "^1.12.3",
     "request": "^2.88.0",
     "websocket": "^1.0.29"
   },
   "scripts": {
-    "start": "node ./index.js"
+    "start": "parcel build ./front/index.html -d frontend-dist --no-source-maps --experimental-scope-hoisting && node ./index.js"
   }
 }

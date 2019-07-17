@@ -2,7 +2,9 @@ const webSocketServer = require('websocket').server;
 const http = require('http');
 const escapeHTML = require('escape-html');
 const request = require('request');
-import { bton, ntob } from 'number-to-base64';
+const fs = require('fs');
+const bton = require('number-to-base64').bton;
+const ntob = require('number-to-base64').ntob;
 require('dotenv').config();
 
 process.title = "diceChat";
@@ -10,14 +12,26 @@ process.title = "diceChat";
 let clients = [];
 
 const server = http.createServer((request, response) => {
-    //TODO: FRONTEND GOES HERE
+    fs.readFile('./frontend-dist/' + request.url.replace('..', ''), 'utf8', (err, content) => {
+        if (err) {
+            response.writeHead(500, {
+                "content-type": "text/plain"
+            });
+            response.end('internal server error while trying to get file.');
+        } else {
+            response.writeHead(200, {
+                "content-type": "text/html"
+            });
+            response.end(content.replace("REPLACEMEPORT", process.env.PORT));
+        }
+    });
 });
 
 server.listen(process.env.PORT, () => {
     console.info(`Server listening on port ${process.env.PORT}`);
 });
 const wsServer = new webSocketServer({
-        httpServer: server
+    httpServer: server
 });
 
 const getRandom = function getRandom(numdice, max, callback) {
@@ -38,9 +52,6 @@ const getRandom = function getRandom(numdice, max, callback) {
             "id": 0 //we dont use the id so it may as well be constant
         };
 
-        let done = false;
-        let response = undefined;
-
         const options = {
             uri: "https://api.random.org/json-rpc/2/invoke",
             method: "POST",
@@ -50,8 +61,7 @@ const getRandom = function getRandom(numdice, max, callback) {
         request(options, function (_, __, body) {
             callback(body.result.random.data);
         });
-    }
-    else {
+    } else {
         const rolls = [];
         for (let i = 0; i < numdice; i++) {
             rolls.push(1 + Math.floor(Math.random() * max));
@@ -65,66 +75,62 @@ wsServer.on('request', request => {
     const connection = request.accept(null, request.origin);
 
     let userName = null;
-    let userColor = null;
 
     const index = clients.push(connection);
 
     connection.on('message', message => {
-        if (message.type !== "utf8") {
-            connection.sendUTF('eOnlyUTF8');
-            return;
-        }
-
-        if (message.utf8Data[0] === 'l') { //login
-            userName = escapeHTML(message.utf8Data.substring(1));
-            if (userName.length > 255) {
-                connection.sendUTF('eNameTooLong');
-                userName = null;
+        try {
+            if (message.type !== "utf8") {
+                connection.sendUTF('eOnlyUTF8');
                 return;
             }
 
-            userColor[0] = Math.floor(Math.random() * 255);
-            userColor[1] = Math.floor(Math.random() * 255);
-            userColor[2] = Math.floor(Math.random() * 255);
+            if (message.utf8Data[0] === 'l') { //login
+                userName = escapeHTML(message.utf8Data.substring(1));
+                if (userName.length > 63) {
+                    connection.sendUTF('eNameTooLong');
+                    userName = null;
+                    return;
+                }
 
-            connection.sendBytes(Buffer.from([0x63, ...userColor]));
-        }
-        else if (message.utf8Data[0] === 'r') { //roll
-            if (userName === null || userColor === null) {
-                connection.sendUTF('eNotLoggedIn');
-                return;
-            }
+                connection.sendUTF('s'); //signed in
+            } else if (message.utf8Data[0] === 'r') { //roll
+                if (userName === null) {
+                    connection.sendUTF('eNotLoggedIn');
+                    return;
+                }
 
-            const numDice = bton(message.utf8Data[1]);
-            const max = bton(message.utf8Data[2]);
-            if (numDice < 1 || max < 2) {
-                connection.sendUTF('eOutOfRange');
-                return;
-            }
+                const numDice = bton(message.utf8Data[1]);
+                const max = bton(message.utf8Data[2]);
+                if (numDice < 1 || max < 2) {
+                    connection.sendUTF('eOutOfRange');
+                    return;
+                }
 
-            getRandom(numDice, max, (rolls) => {
-                let message = '';
-                for (let i = 0; i < rolls.length; i++) {
-                    message += ntob(rolls[i]);
+                getRandom(numDice, max, (rolls) => {
+                    let message = '';
+                    for (let i = 0; i < rolls.length; i++) {
+                        message += ntob(rolls[i]);
+                    }
+
+                    for (let i = 0; i < clients.length; i++) {
+                        clients[i].sendUTF('r' + ntob(max) + ntob(userName.length) + userName + message);
+                    }
+                });
+            } else if (message.utf8Data[0] === 'm') { //message
+                if (userName === null) {
+                    connection.sendUTF('eNotLoggedIn');
+                    return;
                 }
 
                 for (let i = 0; i < clients.length; i++) {
-                    clients[i].sendUTF('r' + userName.length.toString(16).padStart(2, '0') + userName + message);
+                    clients[i].sendUTF('m' + ntob(userName.length) + userName + escapeHTML(message.utf8Data.substring(1)));
                 }
-            });
-        }
-        else if (message.utf8Data[0] === 'm') { //message
-            if (userName === null || userColor === null) {
-                connection.sendUTF('eNotLoggedIn');
-                return;
+            } else {
+                connection.sendUTF('eInvalidMethod')
             }
-
-            for (let i = 0; i < clients.length; i++) {
-                clients[i].sendUTF('m' + userName.length.toString(16).padStart(2, '0') + userName + message.utf8Data.substring(1));
-            }
-        }
-        else {
-            connection.sendUTF('eInvalidMethod')
+        }catch(Exception) {
+            connection.sendUTF('eUnknown');
         }
     });
 
