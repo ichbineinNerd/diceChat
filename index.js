@@ -35,6 +35,8 @@ const wsServer = new webSocketServer({
 });
 
 const getRandom = function getRandom(numdice, max, callback) {
+	if (numdice > (process.env.MAXDICES || 10000))
+		return [];
     if (process.env.USERANDOMORG === 'TRUE') {
         if (!process.env.RANDOMORGAPIKEY)
             return [];
