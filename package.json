@@ -11,5 +11,8 @@
   },
   "scripts": {
     "start": "parcel build ./front/index.html -d frontend-dist --no-source-maps --experimental-scope-hoisting && node ./index.js"
+  },
+  "devDependencies": {
+    "cssnano": "^4.1.10"
   }
 }

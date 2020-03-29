@@ -84,7 +84,7 @@ wsServer.on('request', request => {
                 connection.sendUTF('eOnlyUTF8');
                 return;
             }
-
+			
             if (message.utf8Data[0] === 'l') { //login
                 userName = escapeHTML(message.utf8Data.substring(1));
                 if (userName.length > 63) {
@@ -114,12 +114,12 @@ wsServer.on('request', request => {
                 getRandom(numDice, max, (rolls) => {
                     let message = '';
                     for (let i = 0; i < rolls.length; i++) {
-                        message += ntob(Math.ceil(rolls[i] / 64))
+                        message += ntob(ntob(rolls[i]).length);
 						message += ntob(rolls[i]);
                     }
 
                     for (let i = 0; i < clients.length; i++) {
-                        clients[i].sendUTF('r' + ntob(Math.ceil(max / 64)) + ntob(max) + ntob(userName.length) + userName + message);
+                        clients[i].sendUTF('r' + ntob(ntob(max).length) + ntob(max) + ntob(userName.length) + userName + message);
                     }
                 });
             } else if (message.utf8Data[0] === 'm') { //message
@@ -134,8 +134,9 @@ wsServer.on('request', request => {
             } else {
                 connection.sendUTF('eInvalidMethod')
             }
-        }catch(Exception) {
+        }catch(err) {
             connection.sendUTF('eUnknown');
+			console.log(err);
         }
     });
 

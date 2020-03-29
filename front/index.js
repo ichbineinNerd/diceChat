@@ -39,8 +39,6 @@ if (!window.WebSocket) {
                     author += message.data[3 + bton(message.data[1]) + i];
                 }
                 const msg = message.data.substring(3 + bton(message.data[1]) + authorLength);
-				console.log(message.data);
-				console.log(msg);
                 const numbers = [];
                 for (let i = 0; i < msg.length; i++) {
                     numLength = bton(msg[i]);
@@ -49,7 +47,8 @@ if (!window.WebSocket) {
                 }
                 
                 document.getElementById('a').innerHTML += '<p><b>' + author + '</b> has rolled ' + numbers.length + 'd' + max + ': ' + numbers.join(' ') + ' (SUM: ' + numbers.reduce((a,b) => a + b, 0) + ')</p>';
-            }
+            }else
+				console.log(message.data);
         };
 
         const c = document.getElementById('c');
@@ -58,7 +57,7 @@ if (!window.WebSocket) {
         const evtListener = e => {
             if (e.keyCode === 13) {
                 e.preventDefault();
-                c.value > 0 && d.value > 1 && connection.send('r' + ntob(Math.ceil(c.value / 64)) + ntob(c.value) + ntob(Math.ceil(d.value / 64)) + ntob(d.value))
+                c.value > 0 && d.value > 1 && connection.send('r' + ntob(ntob(c.value).length) + ntob(c.value) + ntob(ntob(d.value).length) + ntob(d.value))
                 c.value = d.value = '';
             }
         };
