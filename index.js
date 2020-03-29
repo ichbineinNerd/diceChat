@@ -22,7 +22,7 @@ const server = http.createServer((request, response) => {
             response.writeHead(200, {
                 "content-type": "text/html"
             });
-            response.end(content.replace("REPLACEMEPORT", process.env.PORT));
+            response.end(content);
         }
     });
 });

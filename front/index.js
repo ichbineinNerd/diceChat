@@ -5,7 +5,7 @@ import {bton, ntob} from 'number-to-base64';
 if (!window.WebSocket) {
     document.body.innerHTML += "<p> sorry, your browser doesn't support websocket. </p>";
 } else {
-    const connection = new WebSocket('ws://' + location.hostname + ':REPLACEMEPORT');
+    const connection = new WebSocket('ws://' + location.host);
     window.onload = () => {
         connection.onopen = () => {
             let name;
