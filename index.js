@@ -95,13 +95,17 @@ wsServer.on('request', request => {
 
                 connection.sendUTF('s'); //signed in
             } else if (message.utf8Data[0] === 'r') { //roll
+			
                 if (userName === null) {
                     connection.sendUTF('eNotLoggedIn');
                     return;
                 }
 
-                const numDice = bton(message.utf8Data[1]);
-                const max = bton(message.utf8Data[2]);
+				const diceNumLength = bton(message.utf8Data[1]);
+				const maxLength = bton(message.utf8Data[2 + diceNumLength]);
+				
+                const numDice = bton(message.utf8Data.substring(2, 2 + diceNumLength));
+                const max = bton(message.utf8Data.substring(3 + diceNumLength, 3 + diceNumLength + maxLength));
                 if (numDice < 1 || max < 2) {
                     connection.sendUTF('eOutOfRange');
                     return;
@@ -110,11 +114,12 @@ wsServer.on('request', request => {
                 getRandom(numDice, max, (rolls) => {
                     let message = '';
                     for (let i = 0; i < rolls.length; i++) {
-                        message += ntob(rolls[i]);
+                        message += ntob(Math.ceil(rolls[i] / 64))
+						message += ntob(rolls[i]);
                     }
 
                     for (let i = 0; i < clients.length; i++) {
-                        clients[i].sendUTF('r' + ntob(max) + ntob(userName.length) + userName + message);
+                        clients[i].sendUTF('r' + ntob(Math.ceil(max / 64)) + ntob(max) + ntob(userName.length) + userName + message);
                     }
                 });
             } else if (message.utf8Data[0] === 'm') { //message

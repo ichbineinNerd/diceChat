@@ -32,14 +32,22 @@ if (!window.WebSocket) {
                 const msg = message.data.substring(2 + authorLength);
                 document.getElementById('a').innerHTML += '<p><b>' + author + '</b>: ' + msg + '</p>';
             } else if (message.data[0] === 'r') {
-                const max = bton(message.data[1]);
-                const authorLength = bton(message.data[2]);
+                const max = bton(message.data.substring(2, 2 + bton(message.data[1])));
+                const authorLength = bton(message.data[2 + bton(message.data[1])]); //guaranteed to work since names longer than 63 chars are rejected
                 let author = '';
                 for (let i = 0; i < authorLength; i++) {
-                    author += message.data[3 + i];
+                    author += message.data[3 + bton(message.data[1]) + i];
                 }
-                const msg = message.data.substring(3 + authorLength);
-                const numbers = msg.split('').map(val => bton(val));
+                const msg = message.data.substring(3 + bton(message.data[1]) + authorLength);
+				console.log(message.data);
+				console.log(msg);
+                const numbers = [];
+                for (let i = 0; i < msg.length; i++) {
+                    numLength = bton(msg[i]);
+                    numbers.push(bton(msg.substring(i + 1, i + 1 + numLength)))
+                    i += numLength;
+                }
+                
                 document.getElementById('a').innerHTML += '<p><b>' + author + '</b> has rolled ' + numbers.length + 'd' + max + ': ' + numbers.join(' ') + ' (SUM: ' + numbers.reduce((a,b) => a + b, 0) + ')</p>';
             }
         };
@@ -50,7 +58,7 @@ if (!window.WebSocket) {
         const evtListener = e => {
             if (e.keyCode === 13) {
                 e.preventDefault();
-                c.value > 0 && d.value > 1 && connection.send('r' + ntob(c.value) + ntob(d.value))
+                c.value > 0 && d.value > 1 && connection.send('r' + ntob(Math.ceil(c.value / 64)) + ntob(c.value) + ntob(Math.ceil(d.value / 64)) + ntob(d.value))
                 c.value = d.value = '';
             }
         };
