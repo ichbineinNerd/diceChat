@@ -73,6 +73,8 @@ const getRandom = function getRandom(numdice, max, callback) {
     }
 };
 
+const lastNMessages = [];
+
 wsServer.on('request', request => {
     const connection = request.accept(null, request.origin);
 
@@ -94,8 +96,16 @@ wsServer.on('request', request => {
                     userName = null;
                     return;
                 }
+				if (userName.toLowerCase() === "server") {
+					connection.sendUTF('eNameIsServer');
+					userName = null;
+					return;
+				}
 
                 connection.sendUTF('s'); //signed in
+				for (let i = 0; i < lastNMessages.length; i++)
+					connection.sendUTF(lastNMessages[i]);
+				connection.sendUTF('m' + ntob('server'.length) + 'server' + '------time you joined------');
             } else if (message.utf8Data[0] === 'r') { //roll
 			
                 if (userName === null) {
@@ -123,6 +133,9 @@ wsServer.on('request', request => {
                     for (let i = 0; i < clients.length; i++) {
                         clients[i].sendUTF('r' + ntob(ntob(max).length) + ntob(max) + ntob(userName.length) + userName + message);
                     }
+					lastNMessages.push('r' + ntob(ntob(max).length) + ntob(max) + ntob(userName.length) + userName + message);
+					if (lastNMessages.length > (process.env.MAXHISTORY || 50))
+						lastNMessages.shift();
                 });
             } else if (message.utf8Data[0] === 'm') { //message
                 if (userName === null) {
@@ -133,6 +146,9 @@ wsServer.on('request', request => {
                 for (let i = 0; i < clients.length; i++) {
                     clients[i].sendUTF('m' + ntob(userName.length) + userName + escapeHTML(message.utf8Data.substring(1)));
                 }
+				lastNMessages.push('m' + ntob(userName.length) + userName + escapeHTML(message.utf8Data.substring(1)));
+				if (lastNMessages.length > (process.env.MAXHISTORY || 50))
+					lastNMessages.shift();
             } else {
                 connection.sendUTF('eInvalidMethod')
             }
