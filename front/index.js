@@ -31,6 +31,8 @@ if (!window.WebSocket) {
                 }
                 const msg = message.data.substring(2 + authorLength);
                 document.getElementById('a').innerHTML += '<p><b>' + author + '</b>: ' + msg + '</p>';
+				const xDiv = document.getElementById('a');
+				xDiv.scrollTop = xDiv.scrollHeight;
             } else if (message.data[0] === 'r') {
                 const max = bton(message.data.substring(2, 2 + bton(message.data[1])));
                 const authorLength = bton(message.data[2 + bton(message.data[1])]); //guaranteed to work since names longer than 63 chars are rejected
@@ -47,6 +49,8 @@ if (!window.WebSocket) {
                 }
                 
                 document.getElementById('a').innerHTML += '<p><b>' + author + '</b> has rolled ' + numbers.length + 'd' + max + ': ' + numbers.join(' ') + ' (SUM: ' + numbers.reduce((a,b) => a + b, 0) + ')</p>';
+				const xDiv = document.getElementById('a');
+				xDiv.scrollTop = xDiv.scrollHeight;
             }else
 				console.log(message.data);
         };
